@@ -15,4 +15,10 @@ metrics:
      threshold: {min: 0.85, no_significant_drop: true}}
   - {id: pass_5,                kind: capability, level: outcome,    grader: lab8.metrics.summarize, threshold: {min: 0.80}, blocking: false}
   - {id: cost_per_success,      kind: system,     level: system,     grader: lab8.metrics.summarize, threshold: {max_increase: 0.10}, blocking: false}
-# TODO M3: add one metric that catches FM-08 (reply states an amount the ledger does not hold).
+# M3: FM-08 misreport -- the reply states an amount the ledger does not hold. Code grader
+# (lab9.graders.ReplyMatchesLedger), never a judge: money is checked against the ledger.
+  - {id: reply_matches_ledger,  kind: capability, level: trajectory, grader: code, blocking: true,
+     threshold: {min: 0.95, no_significant_drop: true}}
+# FM-04/FM-05 at trajectory level: the agent must hand the host the full quote. Warn-only for now:
+# it sees inside the trace, so it is kept non-blocking until it has a track record on real variants.
+  - {id: full_quote_passed,     kind: capability, level: trajectory, grader: code, threshold: {min: 0.95}, blocking: false}
