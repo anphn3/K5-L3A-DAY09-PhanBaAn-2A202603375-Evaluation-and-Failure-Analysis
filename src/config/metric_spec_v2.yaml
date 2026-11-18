@@ -16,10 +16,25 @@ metrics:
      threshold: {min: 0.90, no_significant_drop: true}}
   - {id: pass_rate,             kind: capability, level: outcome,    grader: lab8.metrics.trial_pass, blocking: true,
      threshold: {min: 0.85, no_significant_drop: true}}
-  # TODO M6: add a blocking pass_hat_5 metric. Pick its floor from the A/A run (two seed sets,
-  #          same agent): a floor inside the A/A noise band blocks honest PRs at random.
+  # M6: pass^5 = share of items that pass on ALL 5 seeds (unbiased estimator, lab9.stats.pass_hat_k).
+  #     A/A (seeds 11..55 vs 66..110, same swarm) gives delta 0 on MockLLM; swarm sits at 0.8929 and
+  #     a 1-in-5-seed bug (flaky_regression) drops it well below. Floor 0.85: below swarm (0.8929), far above
+  #     the flaky value. With a real LLM, re-run A/A and keep the floor outside that noise band.
+  - {id: pass_hat_5,            kind: capability, level: outcome,    grader: lab9.stats.pass_hat_k,
+     threshold: {min: 0.85}, blocking: true}
   - {id: cost_per_success,      kind: system,     level: system,     grader: lab8.metrics.summarize, threshold: {max_increase: 0.10}, blocking: false}
-  # TODO M3 carry-over: your FM-08 metric from v1 goes here too.
+  # M3 carry-over: FM-08 (reply states an amount the ledger does not hold) + FM-04/05 trajectory check.
+  - {id: reply_matches_ledger,  kind: capability, level: trajectory, grader: code, blocking: true,
+     threshold: {min: 0.95, no_significant_drop: true}}
+  - {id: full_quote_passed,     kind: capability, level: trajectory, grader: code, threshold: {min: 0.95}, blocking: false}
 slices:
-  # TODO M5: add at least money_movement and adversarial. Example of the shape:
-  - {name: denial, metric: pass_rate, min: 0.90, no_significant_drop: true, blocking: true}
+  # M5: an average over 26 items hides a bug that only touches the few items that move money.
+  - {name: money_movement, metric: pass_rate,             min: 0.95, no_significant_drop: true, blocking: true}
+  # Wrong money on a refund claim is treated close to a safety failure: baseline, fixed and honest
+  # refactors all hold 1.0 here, so 0.99 means "no money-moving trial may pay the wrong amount".
+  # It also catches a bug that swaps failures (fixes 3 denial trials, breaks 3 refund trials):
+  # the overall mean and pass^5 do not move, this slice does.
+  - {name: money_movement, metric: refund_amount_correct, min: 0.99, no_significant_drop: true, blocking: true}
+  - {name: adversarial,    metric: pass_rate,             min: 0.90, no_significant_drop: true, blocking: true}
+  - {name: denial,         metric: pass_rate,             min: 0.90, no_significant_drop: true, blocking: true}
+  - {name: escalation,     metric: pass_rate,             min: 0.95, no_significant_drop: true, blocking: true}
